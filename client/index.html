@@ -1,0 +1,198 @@
+<html>
+  <head>
+    <title>Authentication</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+  </head>
+  <body>
+    <div id="user_info" style='display: none'>
+      <h1>User Info</h1>
+      <div>
+        LAST LOGIN:
+        <label for="user_info" id="user_last_login"></label>
+      </div>
+    </div>
+    <div id="signout" style='display: none'>
+      <div>
+        <button onclick="handleSignOut()">Sign Out</button>
+      </div>
+    </div>
+    <div id="register">
+      <div>
+        <h1>Register</h1>
+      </div>
+      <div>
+        <label>Name</label>
+        <input type="text" id="name" required />
+      </div>
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="email" required />
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input type="password" id="password" required />
+      </div>
+      <div>
+        <label for="gender">Gender</label>&nbsp;&nbsp;
+        Male
+        <input type="radio" name="gender" id="gender" value="male" >
+        Female
+        <input type="radio" name="gender" id="gender" value="female" >
+      </div>
+      <div>
+        <label for="dob">Date of birth</label>
+        <input type="text" id="dob" />
+      </div>
+      <div>
+        <button onclick="handleRegister()"> Register </button>
+      </div>
+    </div>
+    <div id="login">
+      <div>
+        <h1>Login</h1>
+      </div>
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="l_email" required />
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input type="password" id="l_password" required />
+      </div>
+      <div>
+        <button onclick="handleLogin()"> Login </button>
+      </div>
+    </div>
+    <div id="reset-password" style="display: none">
+        <div>
+          <h1>RESET PASSWORD</h1>
+        </div>
+        <div>
+          <label for="email">Email</label>
+          <input type="email" id="r_email" required />
+        </div>
+        <div>
+          <label for="password">Password</label>
+          <input type="password" id="r_password" required />
+        </div>
+        <div>
+          <label for="password">Password</label>
+          <input type="password" id="r_newPassword" required />
+        </div>
+        <div>
+          <button onclick="handleResetPassword()"> Reset Password </button>
+        </div>
+      </div>
+  </body>
+</html>
+
+<script>
+  function handleRegister() {
+    var name = document.getElementById('name').value;
+    var email = document.getElementById('email').value;
+    var password = document.getElementById('password').value;
+    var gender = document.getElementById('gender').value;
+    var dob = document.getElementById('dob').value;
+
+    if(!name || !email || !password || !gender || !dob ) {
+      alert('Please Fill All Required Fields Of Register Form');
+      return;
+    } 
+    const values = { name, email, password, dob, gender };
+    fetch('http://localhost:4000/api/v1/users', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST',
+      body: JSON.stringify(values)
+    })
+    .then(response => response.json())
+    .then(res => {
+      const { status, msg, data } = res;
+      alert(msg);
+    }).catch((err) => {
+      alert(err.message)
+    })
+  }
+
+  function handleLogin() {
+    var email = document.getElementById('l_email').value;
+    var password = document.getElementById('l_password').value;
+    var values = { email, password };
+    
+    fetch('http://localhost:4000/api/v1/users/login', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST',
+      body: JSON.stringify(values)
+    })
+    .then(response => response.json())
+    .then(res => {
+      const { status, msg, data } = res;
+      if(status) {
+        moment().format();
+        const {  lastLogin, token } = data;
+        document.getElementById('register').style.display = 'none';
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('user_info').style.display = 'block';
+        document.getElementById('signout').style.display = 'block';
+        document.getElementById('reset-password').style.display = 'block';
+        document.getElementById('user_last_login').textContent = moment(lastLogin).format('MMMM Do YYYY, h:mm:ss a');
+        alert(data.token)
+      }
+      alert(msg);
+    }).catch((err) => {
+      alert(err.message)
+    })
+  }
+
+  function handleResetPassword() {
+    var email = document.getElementById('r_email').value;
+    var password = document.getElementById('r_password').value;
+    var newPassword = document.getElementById('r_newPassword').value;
+
+    if(!email || !password || !newPassword) {
+      alert('Please enter correct credentials');
+      return;
+    }
+
+    var values = { email, password, newPassword };
+    fetch('http://localhost:4000/api/v1/users/reset-password', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST',
+      body: JSON.stringify(values)
+    })
+    .then(response => response.json())
+    .then(res => {
+      const { status, msg, data } = res;
+      if(!status) {
+        alert(msg);
+        return;
+      }
+      alert(msg);
+      document.getElementById('register').style.display = 'block';
+      document.getElementById('login').style.display = 'block';
+      document.getElementById('user_info').style.display = 'none';
+      document.getElementById('signout').style.display = 'none';
+      document.getElementById('user_last_login').textContent = '';
+      document.getElementById('reset-password').style.display = 'none';
+    }).catch((err) => {
+      alert(err.message)
+    })
+  }
+
+  function handleSignOut() {
+    document.getElementById('register').style.display = 'block';
+    document.getElementById('login').style.display = 'block';
+    document.getElementById('user_info').style.display = 'none';
+    document.getElementById('signout').style.display = 'none';
+    document.getElementById('user_last_login').textContent = '';
+    document.getElementById('reset-password').style.display = 'none';
+  }
+</script>
